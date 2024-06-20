@@ -25,8 +25,8 @@ type Player struct {
 	rider       *ebiten.Image
 	lastAnimate time.Time
 	lastAccel   time.Time
-	xSpeed      int
 	skid        time.Time
+	xSpeed      int
 	walking     bool
 	facingRight bool
 	spawn       int
@@ -81,17 +81,17 @@ func (p *Player) spawning(gs *GameState) {
 		// energizing/waiting
 		if gs.Keys[app.FlapButton] || gs.Keys[app.LeftButton] || gs.Keys[app.RightButton] {
 			p.state = MOUNTED
-			p.image = p.buildMount(true)
+			p.image = p.buildMount()
 			p.spawn = 0
 			p.Vy = 1
 			gs.Sounds[audio.EnergizeSound].Stop()
 		} else {
-			p.image = p.buildMount(true)
+			p.image = p.buildMount()
 		}
 		p.spawn += 1
 	} else {
 		p.state = MOUNTED
-		p.image = p.buildMount(true)
+		p.image = p.buildMount()
 		p.spawn = 0
 		p.Vy = 1
 	}
@@ -118,8 +118,11 @@ func (p *Player) mounted(gs *GameState) {
 
 	p.walkAnimation(gs)
 	p.Wrap()
+	if !aboveCliff {
+		p.walking = false
+	}
 
-	p.image = p.buildMount(aboveCliff)
+	p.image = p.buildMount()
 }
 
 func (p *Player) bounce(gs *GameState, collider *Sprite) bool {
@@ -306,10 +309,10 @@ func (p *Player) unmounted(gs *GameState) {
 func (p *Player) dead(gs *GameState) {
 }
 
-func (p *Player) buildMount(walk bool) *ebiten.Image {
+func (p *Player) buildMount() *ebiten.Image {
 	if p.flap == 1 {
 		p.Frame = 5
-	} else if p.flap == 2 || !walk {
+	} else if p.flap == 2 || !p.walking {
 		p.Frame = 6
 	}
 
@@ -348,7 +351,7 @@ func (p *Player) buildMount(walk bool) *ebiten.Image {
 func (p *Player) buildSpawn(index int) {
 	p.Frame = 3
 	p.walking = true
-	mount := p.buildMount(true)
+	mount := p.buildMount()
 	if p.image == nil {
 		p.image = ebiten.NewImage(mount.Bounds().Dx(), mount.Bounds().Dy())
 	} else {
