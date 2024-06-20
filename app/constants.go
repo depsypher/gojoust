@@ -51,26 +51,26 @@ var (
 		SoundButton:   ebiten.KeyS,
 	}
 
-	White = color.RGBA{
+	White = color.NRGBA{
 		R: 255,
 		G: 255,
 		B: 255,
-		A: 0,
+		A: 255,
 	}
-	Grey = color.RGBA{
+	Grey = color.NRGBA{
 		R: 127,
 		G: 127,
 		B: 127,
-		A: 0,
+		A: 255,
 	}
-	Yellow = color.RGBA{
+	Yellow = color.NRGBA{
 		R: 255,
 		G: 255,
 		B: 86,
-		A: 0,
+		A: 255,
 	}
 
-	SpawnColors = []color.RGBA{
+	SpawnColors = []color.NRGBA{
 		White,
 		Grey,
 		Yellow,
