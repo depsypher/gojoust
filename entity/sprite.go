@@ -40,15 +40,13 @@ func MakeSprite(images []*ebiten.Image, pos ...float64) *Sprite {
 		position = pos
 	}
 	return &Sprite{
-		images,
-		nil,
-		0,
-		images[0].Bounds().Dx(),
-		images[0].Bounds().Dy(),
-		position[0], position[1],
-		0, 0,
-		true,
-		true,
+		Images: images,
+		Width:  images[0].Bounds().Dx(),
+		Height: images[0].Bounds().Dy(),
+		X:      position[0],
+		Y:      position[1],
+		Alive:  true,
+		center: true,
 	}
 }
 
@@ -92,10 +90,11 @@ func (s *Sprite) Fall() {
 }
 
 func (s *Sprite) Wrap() {
-	if s.X > app.ScreenWidth {
-		s.X = float64(-s.Width)
-	} else if s.X < float64(-s.Width) {
-		s.X = app.ScreenWidth - 1
+	w := float64(s.Width / 2)
+	if s.X > app.ScreenWidth+w {
+		s.X = -w
+	} else if s.X < -w {
+		s.X = app.ScreenWidth + w
 	}
 }
 

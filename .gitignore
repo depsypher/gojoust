@@ -1,3 +1,4 @@
 .DS_Store
 .idea
 wasm/gojoust.wasm
+wasm/wasm_exec.js
