@@ -37,10 +37,10 @@ var (
 		time.Millisecond * time.Duration(9),
 	}
 	SpawnPoints = [][]int{
-		{230, 90},  // right
+		{230, 96},  // right
 		{132, 168}, // bottom
-		{109, 47},  // top
-		{16, 98},   // left
+		{109, 53},  // top
+		{16, 104},  // left
 	}
 	Controls = map[Control]ebiten.Key{
 		LeftButton:    ebiten.KeyLeft,
@@ -51,26 +51,26 @@ var (
 		SoundButton:   ebiten.KeyS,
 	}
 
-	White = color.NRGBA{
+	White = color.RGBA{
 		R: 255,
 		G: 255,
 		B: 255,
 		A: 255,
 	}
-	Grey = color.NRGBA{
+	Grey = color.RGBA{
 		R: 127,
 		G: 127,
 		B: 127,
 		A: 255,
 	}
-	Yellow = color.NRGBA{
+	Yellow = color.RGBA{
 		R: 255,
 		G: 255,
 		B: 86,
 		A: 255,
 	}
 
-	SpawnColors = []color.NRGBA{
+	SpawnColors = []color.RGBA{
 		White,
 		Grey,
 		Yellow,

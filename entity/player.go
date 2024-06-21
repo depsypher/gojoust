@@ -21,28 +21,23 @@ const (
 )
 
 type Player struct {
-	*Sprite
+	*MountSprite
 	rider       *ebiten.Image
 	lastAnimate time.Time
 	lastAccel   time.Time
 	skid        time.Time
 	xSpeed      int
-	walking     bool
-	facingRight bool
-	spawn       int
-	flap        int
 	walkStep    bool
 	state       PlayerState
 }
 
 func MakePlayer(ss *Sheet) *Player {
 	return &Player{
-		Sprite:      MakeSprite(ss.Ostrich),
+		MountSprite: MakeMountSprite(ss.Ostrich),
 		rider:       ss.P1Rider,
 		lastAnimate: time.Now(),
 		lastAccel:   time.Now(),
 		skid:        time.Time{},
-		facingRight: true,
 	}
 }
 
@@ -70,7 +65,7 @@ func (p *Player) spawning(gs *GameState) {
 	}
 	if p.spawn <= 20 {
 		// emerging
-		p.buildSpawn(p.spawn)
+		p.buildSpawn(p, p.spawn)
 		p.spawn += 1
 		if p.spawn == 20 {
 			if err := gs.Sounds[audio.EnergizeSound].Play(gs.SoundOn); err != nil {
@@ -346,18 +341,4 @@ func (p *Player) buildMount() *ebiten.Image {
 		return p.flipX(composite, op)
 	}
 	return composite
-}
-
-func (p *Player) buildSpawn(index int) {
-	p.Frame = 3
-	p.walking = true
-	mount := p.buildMount()
-	if p.image == nil {
-		p.image = ebiten.NewImage(mount.Bounds().Dx(), mount.Bounds().Dy())
-	} else {
-		p.image.Clear()
-	}
-	op := ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(0), float64(mount.Bounds().Dy()-index))
-	p.image.DrawImage(mount, &op)
 }

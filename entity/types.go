@@ -3,6 +3,7 @@ package entity
 import (
 	"github.com/depsypher/gojoust/app"
 	"github.com/depsypher/gojoust/assets/audio"
+	"time"
 )
 
 type GameObject interface {
@@ -10,15 +11,17 @@ type GameObject interface {
 }
 
 type GameState struct {
-	Buzzards []*Buzzard
-	Cliffs   []*Cliff
-	Player   *Player
-	Keys     map[app.Control]bool
-	GodMode  bool
-	SoundOn  bool
-	Pause    bool
-	Debug    string
-	Sounds   audio.GameSounds
+	Buzzards  []*Buzzard
+	Cliffs    []*Cliff
+	Player    *Player
+	Keys      map[app.Control]bool
+	GodMode   bool
+	SoundOn   bool
+	Pause     bool
+	Debug     string
+	Sounds    audio.GameSounds
+	WaveStart time.Time
+	NextSpawn time.Time
 }
 
 func (gs *GameState) CliffAsSprites() []*Sprite {

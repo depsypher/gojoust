@@ -20,6 +20,10 @@ type Collider interface {
 	Collides()
 }
 
+type Mount interface {
+	buildMount() *ebiten.Image
+}
+
 type Sprite struct {
 	Images []*ebiten.Image
 	image  *ebiten.Image
@@ -32,6 +36,14 @@ type Sprite struct {
 	Vy     float64
 	Alive  bool
 	center bool
+}
+
+type MountSprite struct {
+	*Sprite
+	flap        int
+	spawn       int
+	walking     bool
+	facingRight bool
 }
 
 func MakeSprite(images []*ebiten.Image, pos ...float64) *Sprite {
@@ -48,6 +60,32 @@ func MakeSprite(images []*ebiten.Image, pos ...float64) *Sprite {
 		Alive:  true,
 		center: true,
 	}
+}
+
+func MakeMountSprite(images []*ebiten.Image, pos ...float64) *MountSprite {
+	position := []float64{0, 0}
+	if len(pos) == 2 {
+		position = pos
+	}
+	return &MountSprite{
+		Sprite:      MakeSprite(images, position[0], position[1]),
+		flap:        0,
+		facingRight: true,
+	}
+}
+
+func (p *MountSprite) buildSpawn(mount Mount, index int) {
+	p.Frame = 3
+	p.walking = true
+	m := mount.buildMount()
+	if p.image == nil {
+		p.image = ebiten.NewImage(m.Bounds().Dx(), m.Bounds().Dy())
+	} else {
+		p.image.Clear()
+	}
+	op := ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(0), float64(m.Bounds().Dy()-index))
+	p.image.DrawImage(m, &op)
 }
 
 func (s *Sprite) drawSolid(bounds image.Rectangle, color color.Color, mask image.Image) *ebiten.Image {

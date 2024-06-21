@@ -9,6 +9,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"log"
+	"math/rand"
+	"time"
 )
 
 var (
@@ -35,14 +37,9 @@ func (g *Game) init() {
 	defer func() {
 		g.inited = true
 		g.state = &entity.GameState{
-			Keys:    make(map[app.Control]bool),
-			GodMode: false,
-		}
-
-		for i := 1; i < 2; i++ {
-			buzz := entity.MakeBuzzard(ss)
-			buzz.SetPos(app.ScreenWidth/2, app.ScreenHeight/(float64(i)+1))
-			//			g.state.Buzzards = append(g.state.Buzzards, buzz)
+			Keys:      make(map[app.Control]bool),
+			GodMode:   false,
+			WaveStart: time.Now(),
 		}
 
 		g.state.Player = entity.MakePlayer(ss)
@@ -88,6 +85,16 @@ func (g *Game) Update() error {
 		g.state.Keys[app.SoundButton] = true
 		g.state.SoundOn = !g.state.SoundOn
 	})
+
+	if time.Now().After(g.state.WaveStart.Add(time.Duration(3) * time.Second)) {
+		if len(g.state.Buzzards) < 3 && time.Now().After(g.state.NextSpawn) {
+			buzz := entity.MakeBuzzard(ss)
+			point := app.SpawnPoints[rand.Intn(len(app.SpawnPoints))]
+			buzz.SetPos(float64(point[0]), float64(point[1]))
+			g.state.Buzzards = append(g.state.Buzzards, buzz)
+			g.state.NextSpawn = time.Now().Add(time.Duration(1) * time.Second)
+		}
+	}
 
 	if !g.state.Pause {
 		g.state.Player.Update(g.state)
