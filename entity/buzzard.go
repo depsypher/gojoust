@@ -20,7 +20,7 @@ func MakeBuzzard(ss *Sheet) *Buzzard {
 	return &Buzzard{
 		MountSprite: MakeMountSprite(ss.Buzzard),
 		bounder:     ss.Bounder,
-		lastAnimate: time.Now(),
+		lastAnimate: time.Time{},
 	}
 }
 
@@ -42,6 +42,11 @@ func (b *Buzzard) spawning(gs *GameState) {
 		b.image = b.buildMount()
 		b.spawn = 0
 		b.Vy = 1
+		if b.FacingRight {
+			b.xSpeed = 1
+		} else {
+			b.xSpeed = -1
+		}
 	}
 	b.lastAnimate = time.Now()
 }
@@ -55,43 +60,107 @@ func (b *Buzzard) buildMount() *ebiten.Image {
 		col := app.SpawnColors[rand.Intn(3)]
 		body = b.drawSolid(composite.Bounds(), col, body)
 	}
-	// draw rider
 	op := ebiten.DrawImageOptions{}
-	y := 0
-	op.GeoM.Translate(float64(4), float64(y))
-	rider := ebiten.NewImageFromImage(b.bounder)
-	if b.state == SPAWNING {
-		col := app.SpawnColors[rand.Intn(3)]
-		rider = b.drawSolid(rider.Bounds(), col, rider)
+
+	// draw rider
+	if b.state != UNMOUNTED {
+		y := 0
+		op.GeoM.Translate(float64(4), float64(y))
+		rider := ebiten.NewImageFromImage(b.bounder)
+		if b.state == SPAWNING {
+			col := app.SpawnColors[rand.Intn(3)]
+			rider = b.drawSolid(rider.Bounds(), col, rider)
+		}
+		composite.DrawImage(rider, &op)
+		op.GeoM.Reset()
 	}
-	composite.DrawImage(rider, &op)
-	op.GeoM.Reset()
 	composite.DrawImage(body, &op)
-	if !b.facingRight {
+	if !b.FacingRight {
 		return b.flipX(composite, op)
 	}
 	return composite
 }
 
 func (b *Buzzard) mounted(gs *GameState) {
-	if time.Now().After(b.lastAnimate.Add(time.Millisecond * time.Duration(500))) {
-		if b.Frame == 5 {
-			b.Frame = 6
-		} else {
-			b.Frame = 5
-		}
-		b.lastAnimate = time.Now()
-	}
+	b.doFlap()
 	b.image = b.buildMount()
-	b.X += 1
+
+	b.velocity()
 	b.Wrap()
 
 	b.Collisions(gs.CliffAsSprites(), func(c *Sprite) {
-		//fmt.Printf("colliding %s\n", c.rect())
+		if b.Y < c.centerY() && xBetween(b.X, c.rect(), 3) {
+			// buzzard is above
+			b.Vy = 0.5
+			b.Y = c.Y - float64(b.Height/2)
+			b.walking = true
+		} else if b.Y-b.Vy > c.Y && xBetween(b.X, c.rect(), 0) {
+			// buzzard is below
+			b.Y += 3
+			b.Vy = 0.5
+		} else if b.centerX() < c.centerX() {
+			// buzzard is to left
+			b.X -= 6
+			b.xSpeed = -b.xSpeed
+			b.FacingRight = false
+		} else if b.centerX() > c.centerX() {
+			// buzzard is to right
+			b.X += 6
+			b.xSpeed = -b.xSpeed
+			b.FacingRight = true
+		}
 	})
 }
 
+func (b *Buzzard) bounce(gs *GameState, collider *Sprite) bool {
+	above := false
+	if b.Y < collider.centerY() && xBetween(b.X, collider.rect(), 3) {
+		// buzzard is above
+		b.Vy = 0.5
+		b.Y = collider.Y - float64(b.Height/2)
+		b.walking = true
+		above = true
+	} else if b.Y-b.Vy > collider.Y && xBetween(b.X, collider.rect(), 0) {
+		// buzzard is below
+		b.Y += 3
+		b.Vy = 0.5
+	} else if b.centerX() < collider.centerX() {
+		// buzzard is to left
+		b.X -= 5
+		b.xSpeed = -2
+	} else if b.centerX() > collider.centerX() {
+		// buzzard is to right
+		b.X += 5
+		b.xSpeed = 2
+	}
+	return above
+}
+
 func (b *Buzzard) unmounted(gs *GameState) {
+	if b.X < app.ScreenWidth/2 {
+		b.FacingRight = false
+		b.xSpeed = -3
+	} else {
+		b.FacingRight = true
+		b.xSpeed = 3
+	}
+	b.doFlap()
+	b.image = b.buildMount()
+	b.velocity()
+	if b.X < -float64(b.Width) || b.X > app.ScreenWidth+float64(b.Width/2) {
+		for i, buzz := range gs.Buzzards {
+			if buzz == b {
+				b.state = DEAD
+				gs.Buzzards = remove(gs.Buzzards, i)
+				break
+			}
+		}
+	}
+}
+
+func remove(s []*Buzzard, i int) []*Buzzard {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
 }
 
 func (b *Buzzard) dead(gs *GameState) {

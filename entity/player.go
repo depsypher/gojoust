@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"fmt"
 	"github.com/depsypher/gojoust/app"
 	"github.com/depsypher/gojoust/assets/audio"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -26,7 +25,6 @@ type Player struct {
 	lastAnimate time.Time
 	lastAccel   time.Time
 	skid        time.Time
-	xSpeed      int
 	walkStep    bool
 	state       PlayerState
 }
@@ -96,8 +94,21 @@ func (p *Player) spawning(gs *GameState) {
 func (p *Player) mounted(gs *GameState) {
 	p.walkInput(gs)
 	p.flapInput(gs)
-	p.velocity(gs)
+	p.velocity()
 
+	aboveCliff := cliffCollision(gs, p)
+	buzzardCollision(gs, p)
+
+	p.walkAnimation(gs)
+	p.Wrap()
+	if !aboveCliff {
+		p.walking = false
+	}
+
+	p.image = p.buildMount()
+}
+
+func cliffCollision(gs *GameState, p *Player) bool {
 	aboveCliff := false
 	for _, c := range gs.CliffAsSprites() {
 		p.Y += 1
@@ -110,14 +121,26 @@ func (p *Player) mounted(gs *GameState) {
 			p.Y -= 1
 		}
 	}
+	return aboveCliff
+}
 
-	p.walkAnimation(gs)
-	p.Wrap()
-	if !aboveCliff {
-		p.walking = false
+func buzzardCollision(gs *GameState, p *Player) {
+	for _, enemy := range gs.Buzzards {
+		if enemy.state != SPAWNING && enemy.Alive && p.Collides(enemy.Sprite) {
+			py := int(p.centerY())
+			by := int(enemy.centerY())
+			if py < by {
+				p.Vy = -0.5
+				p.Y = enemy.Y - float64(enemy.Height)*0.6
+				enemy.state = UNMOUNTED
+			} else if py > by {
+				p.state = UNMOUNTED
+			} else {
+				p.bounce(gs, enemy.Sprite)
+				enemy.bounce(gs, p.Sprite)
+			}
+		}
 	}
-
-	p.image = p.buildMount()
 }
 
 func (p *Player) bounce(gs *GameState, collider *Sprite) bool {
@@ -155,29 +178,6 @@ func (p *Player) bounce(gs *GameState, collider *Sprite) bool {
 
 func xBetween(x float64, rect image.Rectangle, grace int) bool {
 	return x <= float64(rect.Max.X-grace) && x >= float64(rect.Min.X+grace)
-}
-
-func (p *Player) velocity(gs *GameState) {
-	if p.walking {
-		if p.xSpeed != 0 {
-			p.facingRight = p.xSpeed > 0
-		}
-	} else {
-		p.Fall()
-	}
-
-	if p.xSpeed < -4 {
-		p.xSpeed = -4
-	} else if p.xSpeed > 4 {
-		p.xSpeed = 4
-	}
-	if p.xSpeed < 0 {
-		p.X -= app.MoveSpeed[-p.xSpeed]
-	} else {
-		p.X += app.MoveSpeed[p.xSpeed]
-	}
-	gs.Debug = fmt.Sprintf("xspeed=%d", p.xSpeed)
-	p.Y += p.Vy
 }
 
 func (p *Player) walkInput(gs *GameState) {
@@ -218,7 +218,7 @@ func (p *Player) walkInput(gs *GameState) {
 				}
 			}
 		} else {
-			p.facingRight = false
+			p.FacingRight = false
 		}
 	} else if gs.Keys[app.RightButton] && canAccel {
 		if p.walking {
@@ -230,7 +230,7 @@ func (p *Player) walkInput(gs *GameState) {
 				}
 			}
 		} else {
-			p.facingRight = true
+			p.FacingRight = true
 		}
 	}
 }
@@ -299,9 +299,28 @@ func (p *Player) walkAnimation(gs *GameState) {
 }
 
 func (p *Player) unmounted(gs *GameState) {
+	if p.X < app.ScreenWidth/2 {
+		p.FacingRight = false
+		p.xSpeed = -3
+	} else {
+		p.FacingRight = true
+		p.xSpeed = 3
+	}
+	p.doFlap()
+	p.image = p.buildMount()
+	p.velocity()
+	if p.X < -float64(p.Width) || p.X > app.ScreenWidth+float64(p.Width/2) {
+		p.state = DEAD
+	}
 }
 
 func (p *Player) dead(gs *GameState) {
+	sp := app.SpawnPoints[rand.Intn(3)]
+	p.SetPos(float64(sp[0]), float64(sp[1]))
+	p.xSpeed = 0
+	p.flap = 0
+	p.buildSpawn(p, 0)
+	p.state = SPAWNING
 }
 
 func (p *Player) buildMount() *ebiten.Image {
@@ -319,25 +338,27 @@ func (p *Player) buildMount() *ebiten.Image {
 		col := app.SpawnColors[rand.Intn(3)]
 		body = p.drawSolid(composite.Bounds(), col, body)
 	}
+	op := ebiten.DrawImageOptions{}
 
 	// draw rider
-	op := ebiten.DrawImageOptions{}
-	y := 0
-	if p.Frame == 4 {
-		y = 2
+	if p.state != UNMOUNTED {
+		y := 0
+		if p.Frame == 4 {
+			y = 2
+		}
+		op.GeoM.Translate(float64(4), float64(y))
+		rider := ebiten.NewImageFromImage(p.rider)
+		if p.state == SPAWNING {
+			col := app.SpawnColors[rand.Intn(3)]
+			rider = p.drawSolid(rider.Bounds(), col, rider)
+		}
+		composite.DrawImage(rider, &op)
+		op.GeoM.Reset()
 	}
-	op.GeoM.Translate(float64(4), float64(y))
-	rider := ebiten.NewImageFromImage(p.rider)
-	if p.state == SPAWNING {
-		col := app.SpawnColors[rand.Intn(3)]
-		rider = p.drawSolid(rider.Bounds(), col, rider)
-	}
-	composite.DrawImage(rider, &op)
 
 	// draw ostrich
-	op.GeoM.Reset()
 	composite.DrawImage(body, &op)
-	if !p.facingRight {
+	if !p.FacingRight {
 		return p.flipX(composite, op)
 	}
 	return composite

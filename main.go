@@ -8,6 +8,7 @@ import (
 	"github.com/depsypher/gojoust/entity"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"log"
 	"math/rand"
 	"time"
@@ -91,6 +92,9 @@ func (g *Game) Update() error {
 			buzz := entity.MakeBuzzard(ss)
 			point := app.SpawnPoints[rand.Intn(len(app.SpawnPoints))]
 			buzz.SetPos(float64(point[0]), float64(point[1]))
+			if rand.Float32() < 0.5 {
+				buzz.FacingRight = false
+			}
 			g.state.Buzzards = append(g.state.Buzzards, buzz)
 			g.state.NextSpawn = time.Now().Add(time.Duration(1) * time.Second)
 		}
@@ -111,6 +115,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %3.2f\nTPS: %3.2f", ebiten.ActualFPS(), ebiten.ActualTPS()))
 		ebitenutil.DebugPrintAt(screen, g.state.Debug, 70, 0)
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%f", g.state.Player.Y), 70, 20)
+
+		for _, lane := range app.Lanes {
+			y := float32(lane)
+			vector.StrokeLine(screen, 0, y, app.ScreenWidth, y, 1, app.Yellow, false)
+		}
 	}
 	for _, cliff := range g.state.Cliffs {
 		cliff.Sprite.DrawSprite(screen)
@@ -118,6 +127,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, b := range g.state.Buzzards {
 		b.Draw(screen)
 	}
+
 	g.state.Player.Draw(screen)
 }
 

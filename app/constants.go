@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"image/color"
+	"math"
 	"time"
 )
 
@@ -37,11 +38,17 @@ var (
 		time.Millisecond * time.Duration(9),
 	}
 	SpawnPoints = [][]int{
-		{230, 96},  // right
+		{236, 96},  // right
 		{132, 168}, // bottom
-		{109, 53},  // top
+		{116, 53},  // top
 		{16, 104},  // left
 	}
+	Lanes = []int{
+		35,
+		89,
+		159,
+	}
+
 	Controls = map[Control]ebiten.Key{
 		LeftButton:    ebiten.KeyLeft,
 		RightButton:   ebiten.KeyRight,
@@ -76,6 +83,19 @@ var (
 		Yellow,
 	}
 )
+
+// WrappedDistance Calculates distance between two points on a playfield that wraps around on the x dimension
+// Adapted from:
+// https://blog.demofox.org/2017/10/01/calculating-the-distance-between-points-in-wrap-around-toroidal-space/
+func WrappedDistance(x1, y1, x2, y2 int) float64 {
+	dx := float64(Abs(x2 - x1))
+	if dx > float64(ScreenWidth)/2 {
+		dx = ScreenWidth - dx
+	}
+
+	dy := float64(y2 - y1)
+	return math.Sqrt(dx*dx + dy*dy)
+}
 
 func Abs(x int) int {
 	if x < 0 {

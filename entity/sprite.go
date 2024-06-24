@@ -10,6 +10,8 @@ import (
 	"image/color"
 	"image/draw"
 	_ "image/png"
+	"math"
+	"time"
 )
 
 type Recter interface {
@@ -40,10 +42,12 @@ type Sprite struct {
 
 type MountSprite struct {
 	*Sprite
+	xSpeed      int
 	flap        int
 	spawn       int
 	walking     bool
-	facingRight bool
+	FacingRight bool
+	lastFlap    time.Time
 }
 
 func MakeSprite(images []*ebiten.Image, pos ...float64) *Sprite {
@@ -70,7 +74,8 @@ func MakeMountSprite(images []*ebiten.Image, pos ...float64) *MountSprite {
 	return &MountSprite{
 		Sprite:      MakeSprite(images, position[0], position[1]),
 		flap:        0,
-		facingRight: true,
+		FacingRight: true,
+		lastFlap:    time.Time{},
 	}
 }
 
@@ -86,6 +91,56 @@ func (p *MountSprite) buildSpawn(mount Mount, index int) {
 	op := ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(0), float64(m.Bounds().Dy()-index))
 	p.image.DrawImage(m, &op)
+}
+
+func (p *MountSprite) doFlap() {
+	if time.Now().After(p.lastFlap.Add(time.Millisecond * time.Duration(200))) {
+		closestDist := math.MaxFloat64
+		closestLane := 0
+		for _, lane := range app.Lanes {
+			dist := app.WrappedDistance(int(p.X), int(p.Y), int(p.X), lane)
+			if dist < closestDist {
+				closestDist = dist
+				closestLane = lane
+			}
+		}
+
+		if closestLane < int(p.Y) {
+			p.Frame = 5
+			p.walking = false
+			p.Vy = -0.3 //-= 0.6
+			p.lastFlap = time.Now()
+		} else if !p.walking {
+			p.Frame = 6
+		}
+	}
+}
+
+func (p *MountSprite) velocity() {
+	if p.walking {
+		if p.xSpeed != 0 {
+			p.FacingRight = p.xSpeed > 0
+		}
+	} else {
+		p.Fall()
+	}
+
+	if p.xSpeed < -4 {
+		p.xSpeed = -4
+	} else if p.xSpeed > 4 {
+		p.xSpeed = 4
+	}
+	if p.xSpeed < 0 {
+		p.X -= app.MoveSpeed[-p.xSpeed]
+	} else {
+		p.X += app.MoveSpeed[p.xSpeed]
+	}
+	p.Y += p.Vy
+
+	if p.Y < 0 {
+		p.Y = 0
+		p.Vy = 1
+	}
 }
 
 func (s *Sprite) drawSolid(bounds image.Rectangle, color color.Color, mask image.Image) *ebiten.Image {
