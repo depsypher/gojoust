@@ -6,4 +6,9 @@ Once it's complete enough I'd like to add a scrolling mode. I'm curious what the
 
 
 Controls are left, right and space to flap.
+
 https://depsypher.github.io/gojoust/
+
+ * Press `S` key to toggle sound
+ * Press `P` key to toggle pause
+ * Press `G` key to toggle god/debug mode

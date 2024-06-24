@@ -16,8 +16,8 @@ const (
 	FlapDnSound     Sound = 3
 	FlapUpSound     Sound = 4
 	HitSound        Sound = 5
-	JoustFreSound   Sound = 6
-	JoustLavSound   Sound = 7
+	OneUpSound      Sound = 6
+	LavaSound       Sound = 7
 	PteroSound      Sound = 8
 	SkidSound       Sound = 9
 	SpawnSound      Sound = 10
@@ -47,10 +47,10 @@ var (
 	Hit []byte
 
 	//go:embed joustfre.ogg
-	JoustFre []byte
+	OneUp []byte
 
 	//go:embed joustlav.ogg
-	JoustLav []byte
+	Lava []byte
 
 	//go:embed ptero.ogg
 	Ptero []byte
@@ -74,14 +74,21 @@ var (
 	Whomp []byte
 
 	soundFiles = map[Sound][]byte{
-		BumpSound:     Bump,
-		EggSound:      Egg,
-		EnergizeSound: Energize,
-		FlapDnSound:   FlapDn,
-		FlapUpSound:   FlapUp,
-		Walk1Sound:    Walk1,
-		Walk2Sound:    Walk2,
-		HitSound:      Hit,
+		BumpSound:       Bump,
+		EggSound:        Egg,
+		EnergizeSound:   Energize,
+		FlapDnSound:     FlapDn,
+		FlapUpSound:     FlapUp,
+		OneUpSound:      OneUp,
+		LavaSound:       Lava,
+		PteroSound:      Ptero,
+		SkidSound:       Skid,
+		SpawnSound:      Spawn,
+		SpawnEnemySound: SpawnEnemy,
+		Walk1Sound:      Walk1,
+		Walk2Sound:      Walk2,
+		HitSound:        Hit,
+		WhompSound:      Whomp,
 	}
 	audioContext = audio.NewContext(44100)
 )

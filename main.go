@@ -40,6 +40,7 @@ func (g *Game) init() {
 		g.state = &entity.GameState{
 			Keys:      make(map[app.Control]bool),
 			GodMode:   false,
+			SoundOn:   true,
 			WaveStart: time.Now(),
 		}
 

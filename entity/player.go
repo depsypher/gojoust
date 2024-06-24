@@ -133,8 +133,14 @@ func buzzardCollision(gs *GameState, p *Player) {
 				p.Vy = -0.5
 				p.Y = enemy.Y - float64(enemy.Height)*0.6
 				enemy.state = UNMOUNTED
+				if err := gs.Sounds[audio.HitSound].Play(gs.SoundOn); err != nil {
+					log.Fatal("Error playing sound", err)
+				}
 			} else if py > by {
 				p.state = UNMOUNTED
+				if err := gs.Sounds[audio.HitSound].Play(gs.SoundOn); err != nil {
+					log.Fatal("Error playing sound", err)
+				}
 			} else {
 				p.bounce(gs, enemy.Sprite)
 				enemy.bounce(gs, p.Sprite)
