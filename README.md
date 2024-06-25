@@ -12,3 +12,4 @@ https://depsypher.github.io/gojoust/
  * Press `S` key to toggle sound
  * Press `P` key to toggle pause
  * Press `G` key to toggle god/debug mode
+ * Press `C` key to toggle CRT mode
