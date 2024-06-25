@@ -20,6 +20,7 @@ const (
 	GodModeButton Control = 3
 	PauseButton   Control = 4
 	SoundButton   Control = 5
+	CrtButton     Control = 6
 	SkidMillis            = 500
 )
 
@@ -56,6 +57,7 @@ var (
 		GodModeButton: ebiten.KeyG,
 		PauseButton:   ebiten.KeyP,
 		SoundButton:   ebiten.KeyS,
+		CrtButton:     ebiten.KeyC,
 	}
 
 	White = color.RGBA{

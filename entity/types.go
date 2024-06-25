@@ -17,6 +17,7 @@ type GameState struct {
 	Keys      map[app.Control]bool
 	GodMode   bool
 	SoundOn   bool
+	CrtOn     bool
 	Pause     bool
 	Debug     string
 	Sounds    audio.GameSounds

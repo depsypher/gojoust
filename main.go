@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"errors"
 	"fmt"
 	"github.com/depsypher/gojoust/app"
@@ -16,6 +17,9 @@ import (
 
 var (
 	ss *entity.Sheet
+
+	//go:embed app/crt.go
+	crt_go []byte
 )
 
 func init() {
@@ -32,6 +36,8 @@ type Game struct {
 	inited bool
 	ss     entity.Sheet
 	state  *entity.GameState
+	screen *ebiten.Image
+	crt    *ebiten.Shader
 }
 
 func (g *Game) init() {
@@ -41,6 +47,7 @@ func (g *Game) init() {
 			Keys:      make(map[app.Control]bool),
 			GodMode:   false,
 			SoundOn:   true,
+			CrtOn:     true,
 			WaveStart: time.Now(),
 		}
 
@@ -65,6 +72,12 @@ func (g *Game) init() {
 			errSound := errors.New("error loading sounds")
 			log.Fatal(errors.Join(errSound, err))
 		}
+
+		s, err := ebiten.NewShader(crt_go)
+		if err != nil {
+			return
+		}
+		g.crt = s
 	}()
 }
 
@@ -86,6 +99,10 @@ func (g *Game) Update() error {
 	toggle(app.SoundButton, g.state.Keys, func() {
 		g.state.Keys[app.SoundButton] = true
 		g.state.SoundOn = !g.state.SoundOn
+	})
+	toggle(app.CrtButton, g.state.Keys, func() {
+		g.state.Keys[app.CrtButton] = true
+		g.state.CrtOn = !g.state.CrtOn
 	})
 
 	if time.Now().After(g.state.WaveStart.Add(time.Duration(3) * time.Second)) {
@@ -112,24 +129,40 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
+	w, h := screen.Bounds().Dx(), screen.Bounds().Dy()
+	if g.screen == nil {
+		g.screen = ebiten.NewImage(w, h)
+	} else {
+		g.screen.Clear()
+	}
+
 	if g.state.GodMode {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %3.2f\nTPS: %3.2f", ebiten.ActualFPS(), ebiten.ActualTPS()))
-		ebitenutil.DebugPrintAt(screen, g.state.Debug, 70, 0)
-		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("%f", g.state.Player.Y), 70, 20)
+		ebitenutil.DebugPrint(g.screen, fmt.Sprintf("FPS: %3.2f\nTPS: %3.2f", ebiten.ActualFPS(), ebiten.ActualTPS()))
+		ebitenutil.DebugPrintAt(g.screen, g.state.Debug, 70, 0)
+		ebitenutil.DebugPrintAt(g.screen, fmt.Sprintf("%f", g.state.Player.Y), 70, 20)
 
 		for _, lane := range app.Lanes {
 			y := float32(lane)
-			vector.StrokeLine(screen, 0, y, app.ScreenWidth, y, 1, app.Yellow, false)
+			vector.StrokeLine(g.screen, 0, y, app.ScreenWidth, y, 1, app.Yellow, false)
 		}
 	}
 	for _, cliff := range g.state.Cliffs {
-		cliff.Sprite.DrawSprite(screen)
+		cliff.Sprite.DrawSprite(g.screen)
 	}
 	for _, b := range g.state.Buzzards {
-		b.Draw(screen)
+		b.Draw(g.screen)
 	}
 
-	g.state.Player.Draw(screen)
+	g.state.Player.Draw(g.screen)
+
+	if g.state.CrtOn {
+		op := &ebiten.DrawRectShaderOptions{}
+		op.Images[0] = g.screen
+		screen.DrawRectShader(w, h, g.crt, op)
+	} else {
+		op := &ebiten.DrawImageOptions{}
+		screen.DrawImage(g.screen, op)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
