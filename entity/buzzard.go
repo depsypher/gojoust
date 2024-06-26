@@ -110,6 +110,32 @@ func (b *Buzzard) mounted(gs *GameState) {
 			b.FacingRight = true
 		}
 	})
+
+	b.Collisions(gs.BuzzardsAsSprites(), func(c *Sprite) {
+		b.bounce(gs, c)
+	})
+}
+
+func (b *Buzzard) unmounted(gs *GameState) {
+	if b.X < app.ScreenWidth/2 {
+		b.FacingRight = false
+		b.xSpeed = -3
+	} else {
+		b.FacingRight = true
+		b.xSpeed = 3
+	}
+	b.doFlap()
+	b.image = b.buildMount()
+	b.velocity()
+	if b.X < -float64(b.Width) || b.X > app.ScreenWidth+float64(b.Width/2) {
+		for i, buzz := range gs.Buzzards {
+			if buzz == b {
+				b.state = DEAD
+				gs.Buzzards = remove(gs.Buzzards, i)
+				break
+			}
+		}
+	}
 }
 
 func (b *Buzzard) bounce(gs *GameState, collider *Sprite) bool {
@@ -134,28 +160,6 @@ func (b *Buzzard) bounce(gs *GameState, collider *Sprite) bool {
 		b.xSpeed = 2
 	}
 	return above
-}
-
-func (b *Buzzard) unmounted(gs *GameState) {
-	if b.X < app.ScreenWidth/2 {
-		b.FacingRight = false
-		b.xSpeed = -3
-	} else {
-		b.FacingRight = true
-		b.xSpeed = 3
-	}
-	b.doFlap()
-	b.image = b.buildMount()
-	b.velocity()
-	if b.X < -float64(b.Width) || b.X > app.ScreenWidth+float64(b.Width/2) {
-		for i, buzz := range gs.Buzzards {
-			if buzz == b {
-				b.state = DEAD
-				gs.Buzzards = remove(gs.Buzzards, i)
-				break
-			}
-		}
-	}
 }
 
 func remove(s []*Buzzard, i int) []*Buzzard {

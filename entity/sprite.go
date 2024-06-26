@@ -224,6 +224,9 @@ func (s *Sprite) Collides(c *Sprite) bool {
 
 		for y := hitBoxMinY; y < hitBoxMaxY; y++ {
 			for x := hitBoxMinX; x < hitBoxMaxX; x++ {
+				if s.image == nil || c.image == nil {
+					return true
+				}
 				alpha1 := s.image.RGBA64At(x-s.rect().Min.X, y-s.rect().Min.Y).A
 				if alpha1 != 0 {
 					alpha2 := c.image.RGBA64At(x-c.rect().Min.X, y-c.rect().Min.Y).A
@@ -243,7 +246,7 @@ type doOnCollide func(c *Sprite)
 func (s *Sprite) Collisions(group []*Sprite, onCollide doOnCollide) []*Sprite {
 	var result []*Sprite
 	for _, c := range group {
-		if s.Collides(c) {
+		if s != c && s.Collides(c) {
 			onCollide(c)
 			result = append(result, c)
 		}

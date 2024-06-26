@@ -32,3 +32,11 @@ func (gs *GameState) CliffAsSprites() []*Sprite {
 	}
 	return r
 }
+
+func (gs *GameState) BuzzardsAsSprites() []*Sprite {
+	r := make([]*Sprite, len(gs.Buzzards))
+	for i := range gs.Buzzards {
+		r[i] = gs.Buzzards[i].MountSprite.Sprite
+	}
+	return r
+}
